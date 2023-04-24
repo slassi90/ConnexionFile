@@ -1,23 +1,39 @@
 package com.example.springboot.filedownload.demo.service;
 
 
-import ch.qos.logback.core.testUtil.RandomUtil;
+import com.example.springboot.filedownload.demo.Config.JwtService;
+import com.example.springboot.filedownload.demo.Repository.UserRepository;
+import com.example.springboot.filedownload.demo.controller.AuthentificationRequest;
+import com.example.springboot.filedownload.demo.controller.AuthentificationResponse;
 import com.example.springboot.filedownload.demo.model.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.math.BigInteger;
-import java.security.SecureRandom;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 
 @Service
 public class UserService {
+    @Autowired
+    private JwtService jwtService;
+    @Autowired
+    private AuthenticationManager authenticationManager;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private ObjectMapper objectMapper;
     public String export(List<User> users) {
 
         Gson gson = new GsonBuilder()
@@ -36,21 +52,26 @@ public class UserService {
         return s_ran;
         }
 
-    public User getJson(MultipartFile file){
+    public int saveUsers(MultipartFile file) throws IOException{
+       // User[] users =objectMapper.readValue(file.getBytes(),User[].class);
+        User[] users = objectMapper.readValue(file.getBytes(),User[].class);
+           List<User> usersList = List.of(users);
+           usersList.stream().forEach(u -> u.setPassword(passwordEncoder.encode(u.getPassword())));
+           userRepository.saveAll(usersList);
+            return  usersList.size();
+    }
 
-        User userJson = new User();
-        try{
-            ObjectMapper objectMapper = new ObjectMapper();
-            userJson = objectMapper.readValue(file.getBytes(),User.class);
-            List<User> user = new ArrayList<>();
-            user.add(userJson);
+    public AuthentificationResponse auth(AuthentificationRequest request){
+        Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword()));
+        String token = jwtService.generateToken((User) authenticate.getPrincipal());
+        return AuthentificationResponse.builder().accessToken(token).build();
+    }
+    public User findByEmail(String email){
+      //  authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail()
+        //        ,request.getPassword()));
+    Optional  <User> user  = userRepository.findByEmail(email);
 
-        }catch (IOException err){
-            System.out.println(err.toString());
-
-        }
-
-        return  userJson;
+    return user.get();
     }
 
         public String genarateStringRandom(){
