@@ -23,7 +23,7 @@ public class SecurityConfiguration {
                 .csrf()
                 .disable()
                 .authorizeHttpRequests()
-                .requestMatchers("/api/users/generate/**","/api/users/batch/**","/api/auth/**")
+                .requestMatchers("/api/users/generate/**","/api/users/batch/**","/api/auth/**", "/api-docs/**", "/swagger-ui.html", "/swagger-ui/**")
                 .permitAll()
                 .anyRequest()
                 .authenticated()

@@ -4,6 +4,7 @@ package com.example.springboot.filedownload.demo.controller;
 
 //import com.example.springboot.filedownload.demo.Repository.UserRepository;
 import com.example.springboot.filedownload.demo.Exception.ApiRequestException;
+import com.example.springboot.filedownload.demo.Exception.MissingParameterException;
 import com.example.springboot.filedownload.demo.auth.AuthenticationRequest;
 import com.example.springboot.filedownload.demo.model.User;
 import com.example.springboot.filedownload.demo.service.UserService;
@@ -61,8 +62,8 @@ private UserService userService;
 
 
          @GetMapping("/api/users/generate" )
-        public ResponseEntity<byte[]> downloadfile(@RequestParam (value = "count") int count){
-
+        public ResponseEntity<byte[]> downloadfile(@RequestParam (value = "count") Integer count){
+          if(count != null){
             String jsonUsers = userService.export(generateusers(count));
             byte[] usersJsonBytes = jsonUsers.getBytes();
 
@@ -72,6 +73,11 @@ private UserService userService;
                     .contentType(MediaType.APPLICATION_JSON)
                     .contentLength(usersJsonBytes.length)
                     .body(usersJsonBytes);
+          }
+          else{
+              throw new MissingParameterException(" count parameter is required");
+
+          }
 
         }
     @PostMapping ("/api/users/batch")
@@ -80,6 +86,7 @@ private UserService userService;
     }
     @PostMapping ("/api/auth")
     public ResponseEntity<AuthentificationResponse> auth(@RequestBody AuthentificationRequest request){
+
         return ResponseEntity.ok().body(userService.auth(request));
     }
     @GetMapping("/api/users/me")
@@ -92,8 +99,8 @@ private UserService userService;
     public ResponseEntity<User> getbyemail (@PathVariable String username ){
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     User user = (User) authentication.getPrincipal();
-throw new ApiRequestException("not found");
-//    return ResponseEntity.ok().body(userService.findByEmail(username));
+//throw new ApiRequestException("not found");
+   return ResponseEntity.ok().body(userService.findByEmail(username));
 }
 
 
