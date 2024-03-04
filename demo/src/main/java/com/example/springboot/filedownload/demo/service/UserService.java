@@ -2,28 +2,32 @@ package com.example.springboot.filedownload.demo.service;
 
 
 import com.example.springboot.filedownload.demo.Config.JwtService;
+import com.example.springboot.filedownload.demo.Exception.EmployeeNotFoundException;
 import com.example.springboot.filedownload.demo.Exception.UserNotFoundException;
 import com.example.springboot.filedownload.demo.Exception.UsernameandPasswordInCorrect;
+import com.example.springboot.filedownload.demo.Repository.DepartementRepository;
+import com.example.springboot.filedownload.demo.Repository.EmployeeRepository;
 import com.example.springboot.filedownload.demo.Repository.UserRepository;
 import com.example.springboot.filedownload.demo.controller.AuthentificationRequest;
 import com.example.springboot.filedownload.demo.controller.AuthentificationResponse;
+import com.example.springboot.filedownload.demo.model.Employee;
 import com.example.springboot.filedownload.demo.model.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -37,6 +41,10 @@ public class UserService {
     private UserRepository userRepository;
     @Autowired
     private ObjectMapper objectMapper;
+    @Autowired
+    private EmployeeRepository employeeRepository;
+    @Autowired
+    private DepartementRepository departementRepository;
     public String export(List<User> users) {
 
         Gson gson = new GsonBuilder()
@@ -54,6 +62,29 @@ public class UserService {
         String s_ran = s[ran.nextInt(s.length)];
         return s_ran;
         }
+    public List<User> generateusers (int count){
+        List<User> users = new ArrayList<>();
+        for (int i=0;i<count;i++) {
+            User user = new User();
+            user.setUsername(genarateStringRandom());
+            user.setJobposition(genarateStringRandom());
+            user.setLastname(genarateStringRandom());
+            user.setCity(genarateStringRandom());
+            user.setEmail(genarateStringRandom());
+            user.setCountry(genarateStringRandom());
+            user.setUsername(genarateStringRandom());
+            user.setFirstname(genarateStringRandom());
+            user.setBirthDate(genarateStringRandom());
+            user.setAvatar(genarateStringRandom());
+            user.setMobile(genarateStringRandom());
+            user.setRole(userrole());
+            user.setCompany(genarateStringRandom());
+            user.setPassword(genarateStringRandom());
+            users.add(user);
+
+        }
+        return users;
+    }
 
     public int saveUsers(MultipartFile file) throws IOException{
        // User[] users =objectMapper.readValue(file.getBytes(),User[].class);
@@ -77,7 +108,9 @@ public class UserService {
     public User findByEmail(String email){
       //  authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.getEmail()
         //        ,request.getPassword()));
-    Optional <User> user  = userRepository.findByEmail(email);
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        User userss = (User) authentication.getPrincipal();
+        Optional <User> user  = userRepository.findByEmail(email);
     if(user.isPresent()){
         return user.get();
 
@@ -87,7 +120,37 @@ public class UserService {
     }
 
     }
+    public Employee Employeewithdepartementid (Long id){
+       Optional<Employee> employee1 = Optional.ofNullable(employeeRepository.Employeewithdepartementid(id));
+        if (employee1.isPresent()){
+            return employee1.get();
+        }
+    else {
+        throw  new EmployeeNotFoundException("employee not found ");
+        }
+    }
 
+    public Optional <Employee> lastNameBymaxSalary() {
+       List<Employee> employees = employeeRepository.findAll();
+
+      Optional <Employee> emp =employees.stream()
+               .max(Comparator.comparing(Employee::getSalary));
+                emp.ifPresent(employee -> System.out.println(employee.getLast_name()) );
+
+return emp;
+
+
+
+    }
+
+   public List<Employee> findfirstName(){
+List <Employee>employes = employeeRepository.findAll();
+        employes.stream()
+                .map(Employee::getFirst_name)
+                .forEach(System.out::println);
+
+return employes;
+    }
         public String genarateStringRandom(){
             int leftLimit = 97; // letter 'a'
             int rightLimit = 122; // letter 'z'
